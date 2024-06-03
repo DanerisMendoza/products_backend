@@ -21,12 +21,11 @@ class ProductController extends Controller
     public function InsertProduct(Request $request)
     {
         $form = json_decode($request->form, true);
-        \Log::info($request);
-        \Log::info($form);
         $validator = Validator::make($form, [
             'name' => 'required',
             'description' => 'required',
             'category'  => 'required',
+            'date_and_time'  => 'required',
         ]);
 
         // picture validation
@@ -49,6 +48,7 @@ class ProductController extends Controller
         $Product->name = $form['name'];
         $Product->description = $form['description'];
         $Product->category =  $form['category'];
+        $Product->date_and_time =  $form['date_and_time'];
         $Product->save();
 
         foreach ($request->file('files') as $file) {
