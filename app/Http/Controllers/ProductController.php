@@ -14,7 +14,26 @@ class ProductController extends Controller
     {
         $result = DB::table('products')
             ->select('products.*')
-            ->get();
+            ->get()
+            ->each(function ($q) {
+                $images = DB::table('product_images')
+                    ->select('product_images.path')
+                    ->where('product_images.product_id', $q->id)
+                    ->get();
+                $imageArray = [];
+                $images->each(function ($image) use (&$imageArray) {
+                    $image_type = substr($image->path, -3);
+                    $image_format = '';
+                    if ($image_type == 'png' || $image_type == 'jpg') {
+                        $image_format = $image_type;
+                    }
+                    $base64str = base64_encode(file_get_contents(public_path($image->path)));
+                    $imageArray[] = [
+                        'base64img' => 'data:image/' . $image_format . ';base64,' . $base64str
+                    ];
+                });
+                $q->images = $imageArray;
+            });;
         return $result;
     }
 

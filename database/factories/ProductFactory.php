@@ -10,11 +10,10 @@ class ProductFactory extends Factory
     {
         // Set the current date and time in the Asia/Manila timezone
         $dateTime = now()->setTimezone('Asia/Manila');
-
         return [
             'name' => $this->faker->word,
             'category' => $this->faker->randomElement(['best seller', 'budget product', 'new arrival']),
-            'description' => $this->faker->lastName,
+            'description' => $this->faker->sentence,
             'date_and_time' => $dateTime->format('Y-m-d H:i:s'),
         ];
     }
