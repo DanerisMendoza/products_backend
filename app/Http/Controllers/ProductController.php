@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
+use App\Models\ProductImages;
 
 class ProductController extends Controller
 {
@@ -19,11 +20,25 @@ class ProductController extends Controller
 
     public function InsertProduct(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|unique:products',
+        $form = json_decode($request->form, true);
+        \Log::info($request);
+        \Log::info($form);
+        $validator = Validator::make($form, [
+            'name' => 'required',
             'description' => 'required',
-            'category' => 'required',
+            'category'  => 'required',
         ]);
+
+        // picture validation
+        if (!isset($request['files'])) {
+            $validator->sometimes('files', 'required|array', function () {
+                return true;
+            });
+            $customMessages = [
+                'files.required' => 'Upload picture is required!',
+            ];
+            $validator->setCustomMessages($customMessages);
+        }
 
         if ($validator->fails()) {
             $validationError = $validator->errors()->first();
@@ -31,11 +46,22 @@ class ProductController extends Controller
         }
 
         $Product = new Product;
-        $Product->name = $request->name;
-        $Product->description = $request->description;
-        $Product->category =  $request->category;
+        $Product->name = $form['name'];
+        $Product->description = $form['description'];
+        $Product->category =  $form['category'];
         $Product->save();
 
-        return response()->json(['message' => 'success'], 200);
+        foreach ($request->file('files') as $file) {
+            $ProductImages = new ProductImages();
+            $file_name = $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $name = explode('.', $file_name)[0] . '-' . uniqid() . '.' . $ext;
+            $name = str_replace(' ', '', $name);
+            $file->move(public_path('product_pictures'), $name);
+            $ProductImages->product_id = $Product->id;
+            $ProductImages->path = '/product_pictures/' . $name;
+            $ProductImages->save();
+        }
+        return 'success';
     }
 }
