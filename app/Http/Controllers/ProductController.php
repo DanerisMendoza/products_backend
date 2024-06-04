@@ -52,7 +52,7 @@ class ProductController extends Controller
         $Product = Product::findOrFail($form['id']);
         $Product->delete();
 
-        $ProductImages = ProductImages::where('product_id',$form['id']);
+        $ProductImages = ProductImages::where('product_id', $form['id']);
         $ProductImages->delete();
 
 
@@ -82,14 +82,16 @@ class ProductController extends Controller
 
     public function GetProducts(Request $request)
     {
-        $perPage = $request->input('perPage', 10);
+        // \Log::info($request);
+        $perPage = $request->input('perPage', 5);
         $page = $request->input('page', 1);
         $search = $request->input('search', '');
         $sortBy = $request->input('sortBy');
         $sortDesc = $request->input('sortDesc');
         $category = $request->input('category');
 
-        $result = DB::table('products')
+        // Create a base query to reuse
+        $baseQuery = DB::table('products')
             ->select('products.*')
             // search filtering
             ->when(!!$search, function ($q) use ($search) {
@@ -102,30 +104,43 @@ class ProductController extends Controller
             ->when($category, function ($q) use ($category) {
                 $q->where('products.category',  $category);
             })
+            // sort latest
+            ->orderBy('products.created_at', 'desc');
 
-            ->get()
-            // adding array images on each data
-            ->each(function ($q) {
-                $images = DB::table('product_images')
-                    ->select('product_images.path')
-                    ->where('product_images.product_id', $q->id)
-                    ->get();
-                $imageArray = [];
-                $images->each(function ($image) use (&$imageArray) {
-                    $image_type = substr($image->path, -3);
-                    $image_format = '';
-                    if ($image_type == 'png' || $image_type == 'jpg') {
-                        $image_format = $image_type;
-                    }
-                    $base64str = base64_encode(file_get_contents(public_path($image->path)));
-                    $imageArray[] = [
-                        'base64img' => 'data:image/' . $image_format . ';base64,' . $base64str
-                    ];
-                });
-                $q->images = $imageArray;
-            });;
-        return $result;
+        // Get the total count of filtered products
+        $total = $baseQuery->count();
+
+        // Apply pagination
+        $result = $baseQuery->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        // Adding array images on each data
+        $result->each(function ($q) {
+            $images = DB::table('product_images')
+                ->select('product_images.path')
+                ->where('product_images.product_id', $q->id)
+                ->get();
+            $imageArray = [];
+            $images->each(function ($image) use (&$imageArray) {
+                $image_type = substr($image->path, -3);
+                $image_format = '';
+                if ($image_type == 'png' || $image_type == 'jpg') {
+                    $image_format = $image_type;
+                }
+                $base64str = base64_encode(file_get_contents(public_path($image->path)));
+                $imageArray[] = [
+                    'base64img' => 'data:image/' . $image_format . ';base64,' . $base64str
+                ];
+            });
+            $q->images = $imageArray;
+        });
+
+        // Return the result with total count
+        return response()->json([
+            'total' => $total,
+            'data' => $result
+        ]);
     }
+
 
     public function InsertProduct(Request $request)
     {
