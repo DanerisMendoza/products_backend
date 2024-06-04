@@ -10,9 +10,78 @@ use App\Models\ProductImages;
 
 class ProductController extends Controller
 {
+    public function DeleteProduct(Request $request)
+    {
+        $id = $request['product_id'];
+        $Product = Product::findOrFail($id);
+        if (!$Product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+        $Product->delete();
+        return 'success';
+    }
+
+    public function UpdateProduct(Request $request)
+    {
+        $form = json_decode($request->form, true);
+        $validator = Validator::make($form, [
+            'name' => 'required',
+            'description' => 'required',
+            'category'  => 'required',
+            'date_and_time'  => 'required',
+        ]);
+
+
+        // picture validation
+        if (!isset($request['files'])) {
+            $validator->sometimes('files', 'required|array', function () {
+                return true;
+            });
+            $customMessages = [
+                'files.required' => 'Upload picture is required!',
+            ];
+            $validator->setCustomMessages($customMessages);
+        }
+
+        if ($validator->fails()) {
+            $validationError = $validator->errors()->first();
+            return $validationError;
+        }
+
+        // delete selected product and images
+        $Product = Product::findOrFail($form['id']);
+        $Product->delete();
+
+        $ProductImages = ProductImages::where('product_id',$form['id']);
+        $ProductImages->delete();
+
+
+        // add new
+
+        $Product = new Product;
+        $Product->name = $form['name'];
+        $Product->description = $form['description'];
+        $Product->category =  $form['category'];
+        $Product->date_and_time =  $form['date_and_time'];
+        $Product->save();
+
+        foreach ($request->file('files') as $file) {
+            $ProductImages = new ProductImages();
+            $file_name = $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $name = explode('.', $file_name)[0] . '-' . uniqid() . '.' . $ext;
+            $name = str_replace(' ', '', $name);
+            $file->move(public_path('product_pictures'), $name);
+            $ProductImages->product_id = $Product->id;
+            $ProductImages->path = '/product_pictures/' . $name;
+            $ProductImages->save();
+        }
+        return 'success';
+    }
+
+
     public function GetProducts(Request $request)
     {
-        \Log::info($request);
         $perPage = $request->input('perPage', 10);
         $page = $request->input('page', 1);
         $search = $request->input('search', '');

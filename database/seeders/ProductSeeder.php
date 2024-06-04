@@ -18,7 +18,7 @@ class ProductSeeder extends Seeder
         // Product::factory(10)->create();
         $dateTime = now()->setTimezone('Asia/Manila');
         $faker = Faker::create();
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             // Create a user
             $Product = Product::create([
                 'name' => $faker->word,

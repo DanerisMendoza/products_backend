@@ -18,4 +18,6 @@ Route::middleware('auth:api')->group(function () {
     //PRODUCT API
     Route::get('/GetProducts', [ProductController::class, 'GetProducts']);
     Route::post('/InsertProduct', [ProductController::class, 'InsertProduct']);
+    Route::post('/UpdateProduct', [ProductController::class, 'UpdateProduct']);
+    Route::delete('/DeleteProduct', [ProductController::class, 'DeleteProduct']);
 });
