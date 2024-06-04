@@ -51,67 +51,72 @@ class UserController extends Controller
     public function Login(Request $request)
     {
         $credentials = $request->validate([
-            'username'    => 'required',
+            'username' => 'required',
             'password' => 'required'
         ]);
+    
+        // Fetch the user by username or email
         $login = DB::table('users')
             ->where('username', $request->username)
+            ->orWhere('email', $request->username)
             ->select('users.password', 'users.username', 'users.user_role')
             ->first();
-
-        if ($login) {
-            $userrole = $login->user_role;
-        } else {
+    
+        if (!$login) {
             return response()->json(
                 [
-                    'message' => 'Please Check the Username or Password.',
+                    'message' => 'Please check the username or password.',
                     'icon' => 'error'
                 ]
             );
         }
-
-        if ($login) {
-            if (Hash::check($request->password, $login->password)) {
-                $passwordGrantClient = Client::where('password_client', 1)->first();
-                $response = [
-                    'grant_type'    => 'password',
-                    'client_id'     => $passwordGrantClient->id,
-                    'client_secret' => $passwordGrantClient->secret,
-                    'username'      => $request->username,
-                    'user_role'      => $userrole,
-                    'password'      => $request->password,
-                    'scope'         => '*',
-                ];
-                if (Auth::attempt($credentials)) {
-                    $tokenRequest = Request::create('/oauth/token', 'post', $response);
-                    $response = app()->handle($tokenRequest);
-                    $data = json_decode($response->getContent());
-                    $token = $data->access_token;
-                    $responseContent = [
+    
+        if (Hash::check($request->password, $login->password)) {
+            $passwordGrantClient = Client::where('password_client', 1)->first();
+    
+            $response = [
+                'grant_type' => 'password',
+                'client_id' => $passwordGrantClient->id,
+                'client_secret' => $passwordGrantClient->secret,
+                'username' => $login->username, // This should be the username from the database
+                'password' => $request->password,
+                'scope' => '*',
+            ];
+    
+            $tokenRequest = Request::create('/oauth/token', 'post', $response);
+            $response = app()->handle($tokenRequest);
+            $data = json_decode($response->getContent());
+    
+            if (isset($data->access_token)) {
+                $token = $data->access_token;
+                return response()->json(
+                    [
                         'message' => 'Login Successfully!',
                         'icon' => 'success',
                         'token' => $token,
-                        'user_role' => $userrole,
-                    ];
-                    return response()->json($responseContent, 200);
-                }
+                        'user_role' => $login->user_role,
+                    ],
+                    200
+                );
             } else {
                 return response()->json(
                     [
-                        'message' => 'The password were incorrect',
+                        'message' => 'Failed to generate access token.',
                         'icon' => 'error'
                     ],
+                    500
                 );
             }
         } else {
             return response()->json(
                 [
-                    'message' => 'The username were incorrect',
+                    'message' => 'The password was incorrect',
                     'icon' => 'error'
                 ],
             );
         }
     }
+    
 
     public function GetUserDetails()
     {
