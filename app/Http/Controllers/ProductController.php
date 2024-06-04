@@ -12,9 +12,30 @@ class ProductController extends Controller
 {
     public function GetProducts(Request $request)
     {
+        \Log::info($request);
+        $perPage = $request->input('perPage', 10);
+        $page = $request->input('page', 1);
+        $search = $request->input('search', '');
+        $sortBy = $request->input('sortBy');
+        $sortDesc = $request->input('sortDesc');
+        $category = $request->input('category');
+
         $result = DB::table('products')
             ->select('products.*')
+            // search filtering
+            ->when(!!$search, function ($q) use ($search) {
+                $q->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('products.name', 'like', '%' . $search . '%')
+                        ->orWhere('products.description', 'like', '%' . $search . '%');
+                });
+            })
+            // category filtering
+            ->when($category, function ($q) use ($category) {
+                $q->where('products.category',  $category);
+            })
+
             ->get()
+            // adding array images on each data
             ->each(function ($q) {
                 $images = DB::table('product_images')
                     ->select('product_images.path')
