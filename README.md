@@ -1,3 +1,25 @@
+<!-- 
+    to run locally 
+    
+    clone the ff:
+        backend: https://github.com/DanerisMendoza/products_backend.git
+        frontend: https://github.com/DanerisMendoza/products_frontend.git
+
+    backend:
+        composer install
+        create .env and copy and paste env sample to your created .env
+        php artisan optimize
+        php artisan key:generate
+        php artisan migrate
+        phh artisan db:seed
+        php artisan passport:install
+
+    frontend:
+        npm install
+        npm run dev
+-->
+
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
