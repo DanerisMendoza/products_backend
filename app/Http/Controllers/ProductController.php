@@ -18,7 +18,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
         $Product->delete();
-        return 'success';
+        return response()->json(['message' => 'success'], 200);
     }
 
     public function UpdateProduct(Request $request)
@@ -72,7 +72,7 @@ class ProductController extends Controller
             $ProductImages->path = '/product_pictures/' . $name;
             $ProductImages->save();
         }
-        return 'success';
+        return response()->json(['message' => 'success'], 200);
     }
 
 
@@ -134,7 +134,7 @@ class ProductController extends Controller
         return response()->json([
             'total' => $total,
             'data' => $result
-        ]);
+        ],200);
     }
 
 
@@ -182,6 +182,6 @@ class ProductController extends Controller
             $ProductImages->path = '/product_pictures/' . $name;
             $ProductImages->save();
         }
-        return 'success';
+       return response()->json(['message' => 'success'], 200);
     }
 }
