@@ -48,23 +48,19 @@ class ProductController extends Controller
             return $validationError;
         }
 
-        // delete selected product and images
-        $Product = Product::findOrFail($form['id']);
-        $Product->delete();
-
-        $ProductImages = ProductImages::where('product_id', $form['id']);
-        $ProductImages->delete();
-
-
-        // add new
-
-        $Product = new Product;
+        // update selected product
+        $Product = Product::find($form['id']);
         $Product->name = $form['name'];
         $Product->description = $form['description'];
         $Product->category =  $form['category'];
         $Product->date_and_time =  $form['date_and_time'];
         $Product->save();
+        
+        // delete selected product images
+        $ProductImages = ProductImages::where('product_id', $form['id']);
+        $ProductImages->delete();
 
+        // add new images
         foreach ($request->file('files') as $file) {
             $ProductImages = new ProductImages();
             $file_name = $file->getClientOriginalName();
